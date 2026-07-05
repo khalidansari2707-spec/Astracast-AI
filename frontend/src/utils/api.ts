@@ -1,4 +1,21 @@
+import { isMockMode, handleMockRequest } from "./mockApi";
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+// Centralized browser-level fetch interceptor for Mock Demo Mode
+if (typeof window !== "undefined") {
+  const originalFetch = window.fetch;
+  window.fetch = async function (input, init) {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : "";
+    if (url.startsWith(API_BASE_URL)) {
+      const endpoint = url.substring(API_BASE_URL.length);
+      if (isMockMode()) {
+        return handleMockRequest(endpoint, init);
+      }
+    }
+    return originalFetch(input, init);
+  };
+}
 
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const token = typeof window !== "undefined" ? localStorage.getItem("astracast_token") : null;

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_BASE_URL } from "@/utils/api";
+import { isMockMode } from "@/utils/mockApi";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -34,8 +35,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [username, setUsername] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [alertsCount, setAlertsCount] = useState(0);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
+    setIsDemoMode(isMockMode());
     const token = localStorage.getItem("astracast_token");
     const storedRole = localStorage.getItem("astracast_role");
     const storedUser = localStorage.getItem("astracast_user");
@@ -105,6 +108,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               AstraCast AI
             </h1>
             <p className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Space Weather Platform</p>
+            {isDemoMode && (
+              <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
+                ⚡ Demo Mode
+              </span>
+            )}
           </div>
         </div>
 
@@ -163,6 +171,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex items-center gap-3">
           <Activity className="h-5 w-5 text-blue-500" />
           <span className="font-semibold text-white tracking-tight">AstraCast AI</span>
+          {isDemoMode && (
+            <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
+              Demo
+            </span>
+          )}
         </div>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 hover:bg-slate-800 rounded-lg">
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
