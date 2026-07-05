@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Settings, Save, CheckCircle, AlertTriangle, ShieldAlert } from "lucide-react";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function SettingsPage() {
   const [thresholds, setThresholds] = useState<any>(null);
@@ -18,7 +19,7 @@ export default function SettingsPage() {
       const storedRole = localStorage.getItem("astracast_role");
       setRole(storedRole);
       
-      const res = await fetch("http://localhost:8000/api/v1/settings/thresholds", {
+      const res = await fetch(`${API_BASE_URL}/settings/thresholds`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
@@ -55,7 +56,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/settings/thresholds", {
+      const res = await fetch(`${API_BASE_URL}/settings/thresholds`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

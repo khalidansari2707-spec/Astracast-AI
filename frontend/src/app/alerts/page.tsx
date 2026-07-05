@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Bell, CheckCircle2, AlertTriangle, Info, BellOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function AlertsPage() {
   const fetchAlerts = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch(`http://localhost:8000/api/v1/alerts?unacknowledged_only=${filterUnread}`, {
+      const res = await fetch(`${API_BASE_URL}/alerts?unacknowledged_only=${filterUnread}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
@@ -34,7 +35,7 @@ export default function AlertsPage() {
   const handleAcknowledge = async (id: number) => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch(`http://localhost:8000/api/v1/alerts/${id}/acknowledge`, {
+      const res = await fetch(`${API_BASE_URL}/alerts/${id}/acknowledge`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -50,7 +51,7 @@ export default function AlertsPage() {
   const handleAcknowledgeAll = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch(`http://localhost:8000/api/v1/alerts/acknowledge-all`, {
+      const res = await fetch(`${API_BASE_URL}/alerts/acknowledge-all`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { FileDown, FileSpreadsheet, FileText, CheckCircle, Info } from "lucide-react";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function ReportsPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -11,7 +12,7 @@ export default function ReportsPage() {
     setDownloading(format);
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch(`http://localhost:8000/api/v1/reports/download/${format}`, {
+      const res = await fetch(`${API_BASE_URL}/reports/download/${format}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       

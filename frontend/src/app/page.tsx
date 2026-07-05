@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Activity, ShieldCheck, Key, Lock, AlertCircle, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { API_BASE_URL } from "@/utils/api";
+
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -29,7 +31,7 @@ export default function LoginPage() {
       formData.append("username", username);
       formData.append("password", password);
 
-      const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString()

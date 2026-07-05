@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ShieldCheck, UserPlus, Trash2, CheckCircle, AlertTriangle, ShieldAlert, History } from "lucide-react";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -31,7 +32,7 @@ export default function AdminPage() {
       }
 
       // Fetch users
-      const usersRes = await fetch("http://localhost:8000/api/v1/auth/users", {
+      const usersRes = await fetch(`${API_BASE_URL}/auth/users`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (usersRes.ok) {
@@ -40,7 +41,7 @@ export default function AdminPage() {
       }
 
       // Fetch audit logs
-      const logsRes = await fetch("http://localhost:8000/api/v1/settings/logs", {
+      const logsRes = await fetch(`${API_BASE_URL}/settings/logs`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (logsRes.ok) {
@@ -65,7 +66,7 @@ export default function AdminPage() {
 
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/auth/register", {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -102,7 +103,7 @@ export default function AdminPage() {
 
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch(`http://localhost:8000/api/v1/auth/users/${userId}`, {
+      const res = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });

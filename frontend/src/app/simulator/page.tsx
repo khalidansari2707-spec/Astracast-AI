@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Cpu, Wind, Compass, Gauge, AlertTriangle, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function SimulatorPage() {
   const [params, setParams] = useState({
@@ -21,7 +22,7 @@ export default function SimulatorPage() {
   const fetchSimulation = async (currentParams = params) => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/predict/simulate", {
+      const res = await fetch(`${API_BASE_URL}/predict/simulate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

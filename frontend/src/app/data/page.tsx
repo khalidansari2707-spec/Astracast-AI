@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Upload, Database, RefreshCw, Trash2, CheckCircle, AlertTriangle, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function DataPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -16,7 +17,7 @@ export default function DataPage() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/data/statistics", {
+      const res = await fetch(`${API_BASE_URL}/data/statistics`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
@@ -53,7 +54,7 @@ export default function DataPage() {
 
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/data/upload", {
+      const res = await fetch(`${API_BASE_URL}/data/upload`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
         body: formData
@@ -80,7 +81,7 @@ export default function DataPage() {
     setError(null);
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/data/clean", {
+      const res = await fetch(`${API_BASE_URL}/data/clean`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -102,7 +103,7 @@ export default function DataPage() {
     setError(null);
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/data/clear", {
+      const res = await fetch(`${API_BASE_URL}/data/clear`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });

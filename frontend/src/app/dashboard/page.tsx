@@ -25,6 +25,7 @@ import {
   ResponsiveContainer 
 } from "recharts";
 import { motion } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -34,7 +35,7 @@ export default function DashboardPage() {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/dashboard/summary", {
+      const res = await fetch(`${API_BASE_URL}/dashboard/summary`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {

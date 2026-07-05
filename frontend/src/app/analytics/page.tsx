@@ -20,6 +20,7 @@ import {
   Legend
 } from "recharts";
 import { Cpu, ShieldAlert, CheckCircle, RefreshCw } from "lucide-react";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
@@ -31,7 +32,7 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/analytics/metrics", {
+      const res = await fetch(`${API_BASE_URL}/analytics/metrics`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
@@ -48,7 +49,7 @@ export default function AnalyticsPage() {
   const checkTrainingStatus = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/data/train/status", {
+      const res = await fetch(`${API_BASE_URL}/data/train/status`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
@@ -84,7 +85,7 @@ export default function AnalyticsPage() {
     setProgress(5);
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/data/train", {
+      const res = await fetch(`${API_BASE_URL}/data/train`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Play, Sparkles, AlertCircle, CheckCircle, Database } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function PredictPage() {
   const [formData, setFormData] = useState({
@@ -55,7 +56,7 @@ export default function PredictPage() {
 
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/predict/run", {
+      const res = await fetch(`${API_BASE_URL}/predict/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

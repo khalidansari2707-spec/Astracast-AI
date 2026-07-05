@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Search, Calendar, History, ShieldAlert, Sparkles } from "lucide-react";
+import { API_BASE_URL } from "@/utils/api";
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function HistoryPage() {
   const fetchHistory = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/predict/history", {
+      const res = await fetch(`${API_BASE_URL}/predict/history`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {

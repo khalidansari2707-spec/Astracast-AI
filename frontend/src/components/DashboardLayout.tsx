@@ -21,6 +21,7 @@ import {
   X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE_URL } from "@/utils/api";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -51,7 +52,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const fetchAlertsCount = async () => {
     try {
       const token = localStorage.getItem("astracast_token");
-      const res = await fetch("http://localhost:8000/api/v1/alerts?unacknowledged_only=true", {
+      const res = await fetch(`${API_BASE_URL}/alerts?unacknowledged_only=true`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
