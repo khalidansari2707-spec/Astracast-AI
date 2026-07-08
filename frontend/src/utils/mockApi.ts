@@ -81,25 +81,29 @@ const INITIAL_HISTORY = [
     id: 1,
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     operator: "admin",
-    solar_wind_speed: 420.5,
-    plasma_density: 6.2,
-    imf_bz: -1.8,
-    xray_flux: 0.08,
-    predicted_class: "S0 (Quiet)",
+    prediction_horizon: "24h",
     storm_probability: 0.08,
+    expected_solar_wind_speed: 420.5,
+    expected_electron_flux: 150.0,
+    expected_imf_bz: -1.8,
+    expected_radiation_category: "S0",
     confidence: 94.2,
+    explanation: "Magnetosphere stable. Mild plasma laminarity.",
+    recommended_action: "Standard operation monitoring."
   },
   {
     id: 2,
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
     operator: "operator",
-    solar_wind_speed: 610.2,
-    plasma_density: 15.4,
-    imf_bz: -4.8,
-    xray_flux: 0.25,
-    predicted_class: "S1 (Minor)",
+    prediction_horizon: "6h",
     storm_probability: 0.38,
+    expected_solar_wind_speed: 610.2,
+    expected_electron_flux: 1200.0,
+    expected_imf_bz: -4.8,
+    expected_radiation_category: "S1",
     confidence: 88.5,
+    explanation: "Minor solar filament compression shockwave heading towards Earth.",
+    recommended_action: "Prepare ground magnetometers."
   },
 ];
 
@@ -375,53 +379,86 @@ export async function handleMockRequest(endpoint: string, init?: RequestInit): P
     const density = parseFloat(body.plasma_density || "5");
     const bz = parseFloat(body.imf_bz || "0");
     const xray = parseFloat(body.xray_flux || "0.01");
+    const electron_flux = parseFloat(body.electron_flux || "150");
+    const proton_flux = parseFloat(body.proton_flux || "10");
 
-    // Rules
-    let prob = 0.05;
-    let radClass = "S0";
-    if (bz < -5) { prob += 0.3; radClass = "S1"; }
-    if (wind > 600) { prob += 0.25; radClass = "S1"; }
-    if (density > 20) { prob += 0.2; }
-    if (xray > 0.1) { prob += 0.2; radClass = "S2"; }
-    if (prob > 0.8) radClass = "S3";
+    // Let's generate a prediction list for the 6 horizons
+    const horizons = ["30m", "6h", "12h", "24h", "3d", "7d"];
+    const horizon_confidences: Record<string, number> = { "30m": 96.5, "6h": 88.2, "12h": 82.7, "24h": 76.4, "3d": 64.1, "7d": 52.8 };
 
-    prob = Math.min(0.99, prob);
-
-    const newPrediction = {
-      id: getHistory().length + 1,
-      timestamp: new Date().toISOString(),
-      operator: localStorage.getItem("astracast_user") || "operator",
-      solar_wind_speed: wind,
-      plasma_density: density,
-      imf_bz: bz,
-      xray_flux: xray,
-      predicted_class: prob > 0.5 ? `${radClass} (Active Storm)` : "S0 (Quiet)",
-      storm_probability: prob,
-      confidence: 95.0 - (prob * 20),
-    };
+    // Physics-based risk calculation
+    let base_risk = 0.05;
+    if (bz < 0) {
+      base_risk += Math.abs(bz) * 0.05;
+    }
+    if (wind > 400) {
+      base_risk += ((wind - 400) / 400) * 0.35;
+    }
+    if (electron_flux > 1000) {
+      base_risk += (Math.log10(electron_flux) - 3) * 0.15;
+    }
+    const storm_prob = Math.min(0.99, Math.max(0.01, base_risk));
 
     const currentHistory = getHistory();
-    currentHistory.unshift(newPrediction);
+
+    const predictions = horizons.map((h, idx) => {
+      const decay = Math.pow(0.95, idx + 1);
+      const h_wind = wind * decay + 400.0 * (1.0 - decay);
+      const h_bz = bz * decay - 0.5 * (1.0 - decay);
+      const h_electron = electron_flux * decay + 500.0 * (1.0 - decay);
+      let h_prob = storm_prob * decay + 0.1 * (1.0 - decay);
+      h_prob = Math.min(0.99, Math.max(0.01, h_prob));
+
+      let rad_cat = "S0";
+      if (h_electron < 10.0) rad_cat = "S0";
+      else if (h_electron < 100.0) rad_cat = "S1";
+      else if (h_electron < 1000.0) rad_cat = "S2";
+      else if (h_electron < 10000.0) rad_cat = "S3";
+      else if (h_electron < 50000.0) rad_cat = "S4";
+      else rad_cat = "S5";
+
+      const predObj = {
+        id: currentHistory.length + idx + 1,
+        timestamp: new Date().toISOString(),
+        operator: localStorage.getItem("astracast_user") || "operator",
+        prediction_horizon: h,
+        storm_probability: h_prob,
+        expected_solar_wind_speed: h_wind,
+        expected_electron_flux: h_electron,
+        expected_imf_bz: h_bz,
+        expected_radiation_category: rad_cat,
+        confidence: horizon_confidences[h] || 75.0,
+        explanation: `Forecast event probability is ${(h_prob * 100).toFixed(0)}%. Wind speed: ${h_wind.toFixed(0)} km/s.`,
+        recommended_action: h_prob > 0.5 ? "Increase payload shielding." : "Standard monitoring."
+      };
+
+      // Add to history list
+      currentHistory.unshift(predObj);
+
+      return predObj;
+    });
+
     setHistory(currentHistory);
 
-    // Generate Alert if high risk
-    if (prob > 0.5) {
+    // Generate Alert if high risk at short term
+    const shortTermProb = predictions.find(p => p.prediction_horizon === "30m" || p.prediction_horizon === "6h")?.storm_probability || 0;
+    if (shortTermProb > 0.6) {
       const currentAlerts = getAlerts();
       currentAlerts.unshift({
         id: currentAlerts.length + 1,
         timestamp: new Date().toISOString(),
-        severity: prob > 0.8 ? "critical" : "high",
-        message: `High risk manual solar observation: ${newPrediction.predicted_class}. Wind speed: ${wind} km/s.`,
-        parameter: "solar_wind_speed",
-        value: wind,
+        severity: shortTermProb > 0.85 ? "critical" : "high",
+        message: `Upcoming Radiation Storm forecast. Expected S2+ with ${(shortTermProb*100).toFixed(0)}% probability.`,
+        parameter: "electron_flux",
+        value: electron_flux,
         acknowledged: false,
       });
       setAlerts(currentAlerts);
     }
 
     return jsonResponse({
-      status: "success",
-      prediction: newPrediction,
+      message: "Forecast run completed.",
+      predictions
     });
   }
 
@@ -434,12 +471,11 @@ export async function handleMockRequest(endpoint: string, init?: RequestInit): P
     const density = parseFloat(body.plasma_density || "5");
     const bz = parseFloat(body.imf_bz || "0");
     const xray = parseFloat(body.xray_flux || "0.01");
+    const electron_flux = parseFloat(body.electron_flux || "150");
+    const proton_flux = parseFloat(body.proton_flux || "10");
 
     // Math calculation for real-time slider updates
     let prob = 0.02;
-    let category = "S0 (Quiet)";
-    let severity = "low";
-
     if (wind > 500) prob += 0.15;
     if (wind > 700) prob += 0.25;
     if (density > 15) prob += 0.1;
@@ -448,29 +484,44 @@ export async function handleMockRequest(endpoint: string, init?: RequestInit): P
     if (bz < -8) prob += 0.25;
     if (xray > 0.1) prob += 0.15;
     if (xray > 0.5) prob += 0.3;
-
     prob = Math.min(0.99, prob);
 
-    if (prob > 0.8) {
-      category = "S3 (Strong)";
-      severity = "critical";
-    } else if (prob > 0.5) {
-      category = "S2 (Moderate)";
-      severity = "high";
-    } else if (prob > 0.2) {
-      category = "S1 (Minor)";
-      severity = "medium";
-    }
+    const horizons = ["30m", "6h", "12h", "24h", "3d", "7d"];
+    const horizon_confidences: Record<string, number> = { "30m": 96.5, "6h": 88.2, "12h": 82.7, "24h": 76.4, "3d": 64.1, "7d": 52.8 };
+
+    const predictions = horizons.map((h, idx) => {
+      const decay = Math.pow(0.95, idx + 1);
+      const h_wind = wind * decay + 400.0 * (1.0 - decay);
+      const h_bz = bz * decay - 0.5 * (1.0 - decay);
+      const h_electron = electron_flux * decay + 500.0 * (1.0 - decay);
+      let h_prob = prob * decay + 0.1 * (1.0 - decay);
+      h_prob = Math.min(0.99, Math.max(0.01, h_prob));
+
+      let rad_cat = "S0";
+      if (h_electron < 10.0) rad_cat = "S0";
+      else if (h_electron < 100.0) rad_cat = "S1";
+      else if (h_electron < 1000.0) rad_cat = "S2";
+      else if (h_electron < 10000.0) rad_cat = "S3";
+      else if (h_electron < 50000.0) rad_cat = "S4";
+      else rad_cat = "S5";
+
+      return {
+        horizon: h,
+        storm_probability: h_prob,
+        expected_electron_flux: h_electron,
+        expected_solar_wind_speed: h_wind,
+        expected_imf_bz: h_bz,
+        expected_radiation_category: rad_cat,
+        expected_peak_time: new Date(Date.now() + (idx + 1) * 3600 * 1000).toISOString(),
+        expected_duration: h_prob > 0.5 ? 12.0 : 4.0,
+        confidence: horizon_confidences[h] || 75.0,
+        explanation: `Simulated prediction horizon for ${h}.`,
+        recommended_action: h_prob > 0.5 ? "Take precautionary measures." : "Normal operations."
+      };
+    });
 
     return jsonResponse({
-      simulation_results: {
-        storm_probability: prob,
-        radiation_category: category,
-        severity_level: severity,
-        plasma_shock_arrival_eta_hrs: wind > 100 ? (150000000 / (wind * 3600)).toFixed(1) : 48.0,
-        grid_induced_current_amp: (prob * 15).toFixed(1),
-        ionospheric_tec_deviation_pct: (prob * 180).toFixed(0),
-      },
+      predictions
     });
   }
 
@@ -692,7 +743,16 @@ export async function handleMockRequest(endpoint: string, init?: RequestInit): P
   // 15. Data Endpoint: Training Status
   if (cleanEndpoint === "/data/train/status" && method === "GET") {
     if (!isAuthed) return errorResponse("Unauthorized", 401);
-    return jsonResponse(trainingProgress);
+    return jsonResponse({
+      status: trainingProgress.active ? "training" : "completed",
+      progress: trainingProgress.active ? (trainingProgress.epoch * 10) : 100,
+      loss_curves: [],
+      metrics: {
+        "30m": { "rmse": 12.4, "mae": 8.1, "mape": 0.075, "r2": 0.952 },
+        "6h": { "rmse": 14.5, "mae": 9.2, "mape": 0.082, "r2": 0.941 }
+      },
+      feature_importance: []
+    });
   }
 
   // 16. Alerts List
