@@ -1,13 +1,11 @@
-import { API_BASE_URL } from "./api";
-
 // Detect if we should run in Mock/Demo mode
 export function isMockMode(): boolean {
   if (typeof window === "undefined") return false;
 
   // 1. Force mock mode via local storage setting if desired
-  if (localStorage.getItem("astracast_mock_mode") === "true") {
-    return true;
-  }
+  const forceMock = localStorage.getItem("astracast_mock_mode");
+  if (forceMock === "true") return true;
+  if (forceMock === "false") return false;
 
   // 2. If the frontend is deployed (not running on localhost) and the API URL points to localhost,
   // we must run in Mock Mode because the browser will block requests due to Mixed Content (HTTPS -> HTTP).
@@ -16,7 +14,8 @@ export function isMockMode(): boolean {
     window.location.hostname === "127.0.0.1" ||
     window.location.hostname.startsWith("192.168.");
   
-  const apiIsLocal = API_BASE_URL.includes("localhost") || API_BASE_URL.includes("127.0.0.1");
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  const apiIsLocal = apiBase.includes("localhost") || apiBase.includes("127.0.0.1");
 
   if (!isLocalhost && apiIsLocal) {
     return true;

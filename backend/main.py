@@ -22,11 +22,15 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=app_settings.PROJECT_NAME, version="1.0.0")
 
-# CORS Configuration - allow all origins for local dev
+# CORS Configuration
+origins = app_settings.CORS_ORIGINS
+if not origins:
+    origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=True if app_settings.CORS_ORIGINS else False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

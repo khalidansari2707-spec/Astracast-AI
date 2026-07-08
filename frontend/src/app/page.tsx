@@ -6,6 +6,7 @@ import { Activity, ShieldCheck, Key, Lock, AlertCircle, ArrowRight } from "lucid
 import { motion } from "framer-motion";
 
 import { API_BASE_URL } from "@/utils/api";
+import { isMockMode } from "@/utils/mockApi";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,13 +14,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
+    setIsDemoMode(isMockMode());
     // If token exists, direct user to dashboard
     if (localStorage.getItem("astracast_token")) {
       router.push("/dashboard");
     }
   }, [router]);
+
+  const handleToggleDemo = () => {
+    const nextVal = !isDemoMode;
+    setIsDemoMode(nextVal);
+    localStorage.setItem("astracast_mock_mode", nextVal ? "true" : "false");
+    window.location.reload();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +48,15 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || "Authentication failed. Invalid username or password.");
+        const errText = await res.text();
+        let errMsg = "Authentication failed. Invalid username or password.";
+        try {
+          const errJson = JSON.parse(errText);
+          errMsg = errJson.detail || errMsg;
+        } catch {
+          errMsg = errText || errMsg;
+        }
+        throw new Error(errMsg);
       }
 
       const data = await res.json();
@@ -98,6 +115,27 @@ export default function LoginPage() {
           className="bg-slate-900/40 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-8 shadow-2xl"
         >
           <h2 className="text-lg font-semibold text-slate-200 mb-6">Portal Authorization</h2>
+
+          {/* System Mode Switcher */}
+          <div className="flex items-center justify-between px-1 py-2 mb-5 border-b border-slate-800/60 pb-4">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${isDemoMode ? "bg-blue-500 animate-pulse" : "bg-emerald-500 animate-pulse"}`} />
+              {isDemoMode ? "Demo Mode (Mock API)" : "Live API Mode"}
+            </span>
+            <button
+              type="button"
+              onClick={handleToggleDemo}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                isDemoMode ? "bg-blue-600" : "bg-slate-700"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  isDemoMode ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Username Input */}

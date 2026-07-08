@@ -9,6 +9,9 @@ class Settings:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 hours
     
+    # CORS
+    CORS_ORIGINS: list = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+    
     # Threshold Defaults
     DEFAULT_THRESHOLDS = {
         "electron_flux": {"low": 10.0, "medium": 100.0, "high": 1000.0, "critical": 5000.0},
